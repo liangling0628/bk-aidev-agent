@@ -78,6 +78,7 @@
     height: 40px;
     padding: 0 12px;
 
+    // 发送按钮尺寸与 Figma 设计稿一致：24×24 容器 + 主题图标 token（small 16px / normal 20px）
     .send-message-icon {
       display: flex;
       flex: 0 0 24px;
@@ -86,7 +87,7 @@
       width: 24px;
       height: 24px;
       margin-left: auto;
-      font-size: 14px;
+      font-size: var(--ai-icon-size, 16px);
       color: #fff;
       cursor: pointer;
       background: #3a84ff;
