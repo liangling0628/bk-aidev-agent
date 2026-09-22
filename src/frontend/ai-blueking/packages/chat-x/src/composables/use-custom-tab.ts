@@ -37,38 +37,30 @@ import {
   watch,
 } from 'vue';
 
-import { t } from '../lang/lang';
-
 import type { CustomTab } from '../types';
 
 export const CUSTOM_TAB_TOKEN = Symbol('CUSTOM_TAB_TOKEN');
-export const EXECUTION_TAB_NAME = 'execution';
-/** 自定义 Tab 默认排序权重；执行情况固定为 0，业务自定义 Tab 缺省回退到此值 */
+/** 自定义 Tab 默认排序权重；业务自定义 Tab 缺省回退到此值 */
 export const DEFAULT_TAB_ORDER = 100;
 
 export function useCustomTabProvider<T extends Record<string, unknown>>(options: {
   /** 侧栏折叠态；由容器传入受控 ref（如 ChatContainer 的 v-model:asideCollapsed），缺省内部自持 */
   collapsed?: Ref<boolean>;
-  /** 执行情况 Tab 是否展示，缺省 true；传 getter 以保持响应式 */
-  executionTabVisible?: () => boolean | undefined;
+  /**
+   * 常驻默认 Tab（如 ChatContainer 的「文件产物」）：
+   * 决定初始 Tab 列表、初始选中态与 resetCustomTab 的落点，缺省为空。
+   */
+  defaultTabs?: CustomTab<T>[];
   onTabChange?: (tab: CustomTab<T>) => void;
 }) {
-  const EXECUTION_TAB: CustomTab<T> = {
-    closable: false,
-    label: t('执行情况'),
-    name: EXECUTION_TAB_NAME,
-    order: 0,
-  };
-  const tabs = shallowRef<CustomTab<T>[]>([EXECUTION_TAB]);
-  const selectedTab = deepRef<CustomTab<T>>(EXECUTION_TAB);
+  const defaultTabs = options.defaultTabs ?? [];
+  const tabs = shallowRef<CustomTab<T>[]>([...defaultTabs]);
+  const selectedTab = deepRef<CustomTab<T> | null>(defaultTabs[0] ?? null);
   const isCollapse = options.collapsed ?? shallowRef(true);
   /** 是否已被主动切换过；未切换前选中态跟随 Tab 栏首位 */
   const hasManualSelection = shallowRef(false);
 
-  /** 执行情况显隐由外部配置控制，缺省可见 */
-  const isExecutionVisible = computed(() => options.executionTabVisible?.() ?? true);
-  const isTabVisible = (tab: Pick<CustomTab<T>, 'name' | 'visible'>) =>
-    tab.name === EXECUTION_TAB_NAME ? isExecutionVisible.value : tab.visible !== false;
+  const isTabVisible = (tab: Pick<CustomTab<T>, 'name' | 'visible'>) => tab.visible !== false;
 
   /**
    * Tab 栏实际展示列表：过滤掉不可见 Tab，并按 order 升序稳定排序（同 order 保持插入顺序）。
@@ -96,7 +88,7 @@ export function useCustomTabProvider<T extends Record<string, unknown>>(options:
 
   /**
    * 确保 Tab 存在（可合并更新），不展开侧栏、不切换选中。
-   * 用于「侧栏已因执行情况打开时同步挂上文件产物」等场景。
+   * 用于「侧栏已因其他 Tab 打开时同步挂上新 Tab」等场景。
    */
   const ensureCustomTab = (tab: CustomTab<T>) => {
     upsertCustomTab(tab);
@@ -117,7 +109,7 @@ export function useCustomTabProvider<T extends Record<string, unknown>>(options:
   };
   /** 写入选中态并派发回调，不影响「是否被主动切换过」的标记 */
   const applySelectedTab = (tab: CustomTab<T>) => {
-    selectedTab.value = tab ?? EXECUTION_TAB;
+    selectedTab.value = tab;
     options.onTabChange?.(tab);
   };
 
@@ -127,8 +119,8 @@ export function useCustomTabProvider<T extends Record<string, unknown>>(options:
   };
 
   const resetCustomTab = () => {
-    tabs.value = [EXECUTION_TAB];
-    selectedTab.value = EXECUTION_TAB;
+    tabs.value = [...defaultTabs];
+    selectedTab.value = defaultTabs[0] ?? null;
     hasManualSelection.value = false;
     isCollapse.value = true;
   };
@@ -139,13 +131,16 @@ export function useCustomTabProvider<T extends Record<string, unknown>>(options:
     }
     // 未被主动切换前，默认选中 Tab 栏首位（order 最小），如常驻的「文件产物」
     if (!hasManualSelection.value) {
-      if (selectedTab.value.name !== list[0].name) {
+      if (selectedTab.value?.name !== list[0].name) {
         applySelectedTab(list[0]);
       }
       return;
     }
-    // 选中 Tab 被隐藏时（如执行情况被配置隐藏），其内容不再渲染，自动切到首个可见 Tab
-    if (!isTabVisible(selectedTab.value)) {
+    // 选中 Tab 被移除或被置为不可见时，其内容不再渲染，自动切到首个可见 Tab。
+    // 按 name 在 displayTabs 中比对，而非复用 selectedTab 持有的对象：
+    // upsert 合并会生成新对象，旧引用上的 visible 已是过期快照。
+    const currentName = selectedTab.value?.name;
+    if (!list.some(tab => tab.name === currentName)) {
       applySelectedTab(list[0]);
     }
   });

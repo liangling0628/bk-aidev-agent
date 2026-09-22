@@ -22,7 +22,6 @@
       v-model:selected-model="selectedModel"
       v-model:selected-shortcut="selectedShortcut"
       :enable-selection="false"
-      :execution-tab-visible="true"
       :menu-sources="MOCK_MENU_SOURCES"
       :message-tools="customMessageTools"
       :messages="messages"

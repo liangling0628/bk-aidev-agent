@@ -110,7 +110,6 @@ aiSummary: >
 | [UserQuestionChoice](./agent/user-question-choice.md) | 用户问题默认选择题渲染。 |
 | [UserQuestionAnsweredCard](./agent/user-question-answered-card.md) | 用户问题回答回显。 |
 | [UserQuestionOption](./agent/user-question-option.md) | 用户问题选项行。 |
-| [ExecutionSummary](./agent/execution-summary.md) | 执行摘要面板。 |
 | [FlowAgentContent](./agent/flow-agent-content.md) | FlowAgent 执行内容。 |
 | [FlowAgentNodeDetail](./agent/flow-agent-node-detail.md) | FlowAgent 节点详情。 |
 | [KnowledgeRagContent](./agent/knowledge-rag-content.md) | 知识召回内容。 |
@@ -136,7 +135,6 @@ aiSummary: >
 | [ActivityLayout](./helper/activity-layout.md) | 活动消息折叠布局。 |
 | [AiLoading](./helper/ai-loading.md) | 三点加载动画。 |
 | [MessageLoading](./helper/message-loading.md) | 品牌加载动画。 |
-| [HighlightKeyword](./helper/highlight-keyword.md) | 关键词高亮。 |
 | [FileIcon](./helper/file-icon.md) | 按扩展名渲染文件类型图标。 |
 | [ResourceIcon](./helper/resource-icon.md) | 按 URL / 组件 / 类型兜底渲染资源图标。 |
 | [VNodeRenderer](./helper/vnode-renderer.md) | Markdown token 到 VNode 的内部渲染桥。 |

@@ -32,6 +32,8 @@ import type { TippyOptions } from 'vue-tippy';
 export type ChatBotEmits = {
   /** 自定义 AI 消息工具点击（非内置 cite/rebuild/delete/like/unlike） */
   'agent-action': [tool: IToolBtn, messages: Message[]];
+  /** 侧栏展开/折叠与宽度变化事件 */
+  'aside-panel-change': [isCollapse: boolean, resizeAsideWidth?: number];
   /** Agent 信息加载完成事件 */
   'agent-info-loaded': [chatHelper: IChatHelper];
   /** 取消分享事件 */
@@ -42,7 +44,7 @@ export type ChatBotEmits = {
    */
   'confirm-share': [messages: Message[], source?: IToolBtn];
   error: [error: Error];
-  /** 执行情况面板展开/折叠事件 */
+  /** @deprecated 请改用 `aside-panel-change`，语义与载荷完全一致；下个大版本移除 */
   'execution-panel-change': [isCollapse: boolean, resizeAsideWidth?: number];
   /** 用户反馈事件 */
   feedback: [tool: IToolBtn, message: Message, reasonList: string[], otherReason: string];
@@ -158,8 +160,6 @@ export interface ChatBotProps {
    * 设为 false 可自行通过 @error 事件处理；AIBlueking 内嵌时会关闭以免双弹
    */
   errorToast?: boolean;
-  /** 「执行情况」Tab 是否展示，缺省 true；为 false 时从 Tab 栏隐藏（该 Tab order 固定 0 且不可关闭） */
-  executionTabVisible?: boolean;
   // === 其他配置 ===
   /** 自定义 CSS 类名 */
   extCls?: string;
@@ -257,7 +257,7 @@ export interface ChatBotProps {
   url?: string;
   /** 使用 agentName 作为欢迎标题 */
   useAgentName?: boolean;
-  /** ResizeLayout 配置（执行情况 / 文件产物侧面板拖拽）；ChatBot 默认 initialDivide 560px，可覆盖 */
+  /** ResizeLayout 配置（文件产物 / 节点详情等侧面板拖拽）；ChatBot 默认 initialDivide 560px，可覆盖 */
   resizeProps?: {
     disabled?: boolean;
     initialDivide?: number | string;

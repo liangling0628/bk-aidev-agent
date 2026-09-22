@@ -15,7 +15,6 @@ aiSummary: >
 | 文档 | 能力域 | 源码位置 | 导出状态 | 覆盖 |
 | ---- | ------ | -------- | -------- | ---- |
 | [DetailSection 详情分段](/components/agent/detail-section) | Agent 能力 | `src/components/chat-content/flow-agent-content/detail-section.vue` | 内部 | 已覆盖 |
-| [ExecutionSummary 执行摘要](/components/agent/execution-summary) | Agent 能力 | `src/components/execution-summary/execution-summary.vue` | 公开 | 已覆盖 |
 | [FlowAgentContent FlowAgent 执行内容](/components/agent/flow-agent-content) | Agent 能力 | `src/components/chat-content/flow-agent-content/flow-agent-content.vue` | 内部 | 已覆盖 |
 | [FlowAgentNodeDetail FlowAgent 节点详情](/components/agent/flow-agent-node-detail) | Agent 能力 | `src/components/chat-content/flow-agent-content/flow-agent-node-detail.vue` | 内部 | 已覆盖 |
 | [InterruptMessageRender 中断消息](/components/agent/interrupt-message) | Agent 能力 | `src/components/chat-message/interrupt-message/interrupt-message.vue` | 公开（`InterruptMessageRender`；类型仍为 `InterruptMessage`） | 已覆盖 |
@@ -37,7 +36,6 @@ aiSummary: >
 | [ActivityLayout 活动布局](/components/helper/activity-layout) | 辅助能力 | `src/components/chat-content/activity-layout/activity-layout.vue` | 内部 | 已覆盖 |
 | [AiLoading 三点加载](/components/helper/ai-loading) | 辅助能力 | `src/components/ai-loading/ai-loading.vue` | 公开 | 已覆盖 |
 | [FileIcon 文件类型图标](/components/helper/file-icon) | 辅助能力 | `src/components/file-icon/file-icon.vue` | 公开 | 已覆盖 |
-| [HighlightKeyword 关键词高亮](/components/helper/highlight-keyword) | 辅助能力 | `src/components/highlight-keyword/highlight-keyword.ts` | 公开 | 已覆盖 |
 | [MessageLoading 品牌加载](/components/helper/message-loading) | 辅助能力 | `src/components/message-loading/message-loading.vue` | 公开 | 已覆盖 |
 | [QuestionsContainer 问题容器占位](/components/helper/questions-container) | 辅助能力 | `src/components/ai-questions/questions-container.vue` | 占位 | 空源码占位 |
 | [ResourceIcon 资源图标](/components/helper/resource-icon) | 辅助能力 | `src/components/resource-icon/resource-icon.vue` | 内部 | 已覆盖 |

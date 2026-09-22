@@ -291,10 +291,6 @@ export default createVue2Wrapper(AIBlueking, {
       type: Function,
       default: undefined,
     },
-    executionTabVisible: {
-      type: Boolean,
-      default: true,
-    },
     resizeProps: {
       type: Object,
       default: undefined,
@@ -388,6 +384,8 @@ const chatBotEmitNames = [
   'request-share',
   'confirm-share',
   'cancel-share',
+  'aside-panel-change',
+  // 旧事件名已标记 deprecated，保留一个版本周期
   'execution-panel-change',
   'update:asideCollapsed',
   'feedback',
@@ -528,10 +526,6 @@ export const ChatBotV2 = createVue2Wrapper(ChatBot, {
     onCustomTabChange: {
       type: Function,
       default: undefined,
-    },
-    executionTabVisible: {
-      type: Boolean,
-      default: true,
     },
   },
   emitNames: [...chatBotEmitNames],

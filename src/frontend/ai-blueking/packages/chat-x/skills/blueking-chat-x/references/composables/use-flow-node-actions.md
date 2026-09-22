@@ -2,7 +2,7 @@
 
 > 未从包入口导出：内部实现 ｜ since 2.0.0
 
-useFlowNodeActions 接收 onInterruptResume 与 openNodeDetail，返回 getNodeActions 与 isNodePending。 失败节点按 retryable/skippable 展示重试/跳过，详情恒在末尾；点击后进入 pending 防重复提交， 以 task_id:node_id:retry 为键自动收敛；点击 resume 时不传 interrupt。 hideResumeActions 为 true 时只返回详情，覆盖 Share 分享态与侧栏「执行情况」面板两类只读场景。
+useFlowNodeActions 接收 onInterruptResume 与 openNodeDetail，返回 getNodeActions 与 isNodePending。 失败节点按 retryable/skippable 展示重试/跳过，详情恒在末尾；点击后进入 pending 防重复提交， 以 task_id:node_id:retry 为键自动收敛；点击 resume 时不传 interrupt。 hideResumeActions 为 true 时只返回详情，用于 Share 分享态这类只读场景。
 
 **关联**：flow-agent-content（FlowAgentContent 内部消费，驱动节点行尾按钮组渲染）
 
@@ -20,7 +20,7 @@ useFlowNodeActions 接收 onInterruptResume 与 openNodeDetail，返回 getNodeA
 
 ```typescript
 function useFlowNodeActions(options: {
-  /** 隐藏重试 / 跳过等交互式 resume 操作（分享态、侧栏执行情况面板等只读场景，仅保留「详情」查看入口） */
+  /** 隐藏重试 / 跳过等交互式 resume 操作（分享态只读场景，仅保留「详情」查看入口） */
   hideResumeActions?: Ref<boolean>;
   /** resume 回调（与第三方审批取消同一回调，按 payload.operation 分流） */
   onInterruptResume: Ref<OnInterruptResume | undefined>;
@@ -76,10 +76,7 @@ interface FlowNodeActionVM {
 
 展示顺序：重试 → 跳过 → 详情。
 
-> **只读场景过滤**：`hideResumeActions` 为 `true` 时，`getNodeActions` 直接过滤掉重试 / 跳过，仅返回「详情」查看入口，用于放开查看、禁止交互的场景。`FlowAgentContent` 目前把两类只读场景并入该入参：
->
-> - `RenderMode.Share` 分享态
-> - 侧栏「执行情况」面板内（`ExecutionSummary` 通过 `EXECUTION_PANEL_TOKEN` 提供上下文，组件用 `useExecutionPanelInject` 读取）
+> **只读场景过滤**：`hideResumeActions` 为 `true` 时，`getNodeActions` 直接过滤掉重试 / 跳过，仅返回「详情」查看入口，用于放开查看、禁止交互的场景。`FlowAgentContent` 目前只在 `RenderMode.Share` 分享态下传入该入参。
 
 ## pending 态与防重复提交
 
@@ -117,13 +114,9 @@ import { toRef } from 'vue';
 import { useFlowNodeActions } from '@blueking/chat-x';
 // 或相对路径：'./use-flow-node-actions'
 
-// 是否处于侧栏「执行情况」面板内；缺省 false，即对话流内渲染
-// useExecutionPanelInject 来自内部 src/composables/use-common.ts，未从包入口导出
-const isInExecutionPanel = useExecutionPanelInject();
-
 const { getNodeActions, isNodePending } = useFlowNodeActions({
-  // 分享态与侧栏执行情况面板均只读：过滤重试 / 跳过，仅保留详情
-  hideResumeActions: computed(() => renderMode.value === RenderMode.Share || isInExecutionPanel),
+  // 分享态只读：过滤重试 / 跳过，仅保留详情
+  hideResumeActions: computed(() => renderMode.value === RenderMode.Share),
   onInterruptResume: toRef(props, 'onInterruptResume'),
   openNodeDetail,
 });

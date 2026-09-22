@@ -28,11 +28,14 @@ import { type Ref, defineComponent, h, nextTick, ref } from 'vue';
 import { mount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { EXECUTION_TAB_NAME, useCustomTabConsumer, useCustomTabProvider } from './use-custom-tab';
+import { useCustomTabConsumer, useCustomTabProvider } from './use-custom-tab';
 
 vi.mock('../lang/lang', () => ({
   t: (key: string) => key,
 }));
+
+/** 模拟 ChatContainer 的常驻「文件产物」Tab */
+const DEFAULT_TAB = { closable: false, label: '文件产物', name: 'file-artifact', order: -1 };
 
 const createProviderComponent = (onTabChange?: (tab: unknown) => void) =>
   defineComponent({
@@ -57,13 +60,11 @@ const createCollapsedProvider = (collapsed: Ref<boolean>) =>
     },
   });
 
-/** 支持注入 executionTabVisible（响应式）的 Provider，便于测试显隐与排序 */
-const createConfigurableProvider = (executionVisible: Ref<boolean>) =>
+/** 带常驻默认 Tab 的 Provider，便于测试初始选中、reset 落点与首位跟随 */
+const createDefaultTabsProvider = () =>
   defineComponent({
     setup() {
-      const result = useCustomTabProvider({
-        executionTabVisible: () => executionVisible.value,
-      });
+      const result = useCustomTabProvider({ defaultTabs: [DEFAULT_TAB] });
       return { providerResult: result };
     },
     render() {
@@ -76,7 +77,7 @@ type ProviderVm = {
     addCustomTab: (tab: { label: string; name: string; order?: number; visible?: boolean }) => void;
     displayTabs: { value: { label: string; name: string }[] };
     selectCustomTab: (tab: { name: string }) => void;
-    selectedTab: { value: { name: string } };
+    selectedTab: { value: null | { name: string } };
     tabs: { value: { label: string; name: string }[] };
   };
 };
@@ -98,13 +99,24 @@ describe('useCustomTab', () => {
   });
 
   describe('useCustomTabProvider', () => {
-    it('初始应该包含执行情况 Tab', () => {
+    it('未传 defaultTabs 时初始应无 Tab、无选中', () => {
       const Provider = createProviderComponent();
       const wrapper = mount(Provider);
 
-      const vm = wrapper.vm as unknown as { providerResult: { tabs: { value: { name: string }[] } } };
-      expect(vm.providerResult.tabs.value.length).toBe(1);
-      expect(vm.providerResult.tabs.value[0]?.name).toBe(EXECUTION_TAB_NAME);
+      const vm = wrapper.vm as unknown as ProviderVm;
+      expect(vm.providerResult.tabs.value).toHaveLength(0);
+      expect(vm.providerResult.selectedTab.value).toBeNull();
+
+      wrapper.unmount();
+    });
+
+    it('传入 defaultTabs 时应作为初始 Tab 并默认选中首个', () => {
+      const Provider = createDefaultTabsProvider();
+      const wrapper = mount(Provider);
+
+      const vm = wrapper.vm as unknown as ProviderVm;
+      expect(vm.providerResult.tabs.value.map(tab => tab.name)).toEqual([DEFAULT_TAB.name]);
+      expect(vm.providerResult.selectedTab.value?.name).toBe(DEFAULT_TAB.name);
 
       wrapper.unmount();
     });
@@ -134,8 +146,7 @@ describe('useCustomTab', () => {
       vm.providerResult.addCustomTab({ label: '节点详情', name: 'node-1' });
       await nextTick();
 
-      expect(vm.providerResult.tabs.value.length).toBe(2);
-      expect(vm.providerResult.tabs.value[1]?.name).toBe('node-1');
+      expect(vm.providerResult.tabs.value.map(tab => tab.name)).toEqual(['node-1']);
       expect(vm.providerResult.isCollapse.value).toBe(false);
 
       wrapper.unmount();
@@ -170,24 +181,25 @@ describe('useCustomTab', () => {
     });
 
     it('ensureCustomTab 应挂上 Tab 但不展开、不切换选中', async () => {
-      const Provider = createProviderComponent();
+      const Provider = createDefaultTabsProvider();
       const wrapper = mount(Provider);
 
       const vm = wrapper.vm as unknown as {
         providerResult: {
-          ensureCustomTab: (tab: { label: string; name: string }) => void;
+          ensureCustomTab: (tab: { label: string; name: string; order?: number }) => void;
           isCollapse: { value: boolean };
-          selectedTab: { value: { name: string } };
+          selectedTab: { value: null | { name: string } };
           tabs: { value: { name: string }[] };
         };
       };
 
-      vm.providerResult.ensureCustomTab({ label: '文件产物', name: 'file-artifact' });
+      // 排在常驻 Tab 之后，选中态不应被抢走
+      vm.providerResult.ensureCustomTab({ label: '节点详情', name: 'node-1', order: 100 });
       await nextTick();
 
-      expect(vm.providerResult.tabs.value.some(tab => tab.name === 'file-artifact')).toBe(true);
+      expect(vm.providerResult.tabs.value.some(tab => tab.name === 'node-1')).toBe(true);
       expect(vm.providerResult.isCollapse.value).toBe(true);
-      expect(vm.providerResult.selectedTab.value.name).toBe(EXECUTION_TAB_NAME);
+      expect(vm.providerResult.selectedTab.value?.name).toBe(DEFAULT_TAB.name);
 
       wrapper.unmount();
     });
@@ -205,7 +217,7 @@ describe('useCustomTab', () => {
             visible?: boolean;
           }) => void;
           isCollapse: { value: boolean };
-          selectedTab: { value: { name: string } };
+          selectedTab: { value: null | { name: string } };
           tabs: { value: { label: string; name: string; order?: number }[] };
         };
       };
@@ -219,7 +231,7 @@ describe('useCustomTab', () => {
       expect(fileTabs).toHaveLength(1);
       expect(fileTabs[0]).toMatchObject({ label: '文件产物-更新', order: -2 });
       expect(vm.providerResult.isCollapse.value).toBe(true);
-      expect(vm.providerResult.selectedTab.value.name).toBe('file-artifact');
+      expect(vm.providerResult.selectedTab.value?.name).toBe('file-artifact');
 
       wrapper.unmount();
     });
@@ -240,13 +252,13 @@ describe('useCustomTab', () => {
       vm.providerResult.addCustomTab({ label: '节点1-重复', name: 'node-1' });
       await nextTick();
 
-      expect(vm.providerResult.tabs.value.length).toBe(2);
+      expect(vm.providerResult.tabs.value).toHaveLength(1);
 
       wrapper.unmount();
     });
 
     it('removeCustomTab 应该移除指定 Tab', async () => {
-      const Provider = createProviderComponent();
+      const Provider = createDefaultTabsProvider();
       const wrapper = mount(Provider);
 
       const vm = wrapper.vm as unknown as {
@@ -259,11 +271,34 @@ describe('useCustomTab', () => {
 
       vm.providerResult.addCustomTab({ label: '节点1', name: 'node-1' });
       await nextTick();
-      expect(vm.providerResult.tabs.value.length).toBe(2);
+      expect(vm.providerResult.tabs.value).toHaveLength(2);
 
       vm.providerResult.removeCustomTab('node-1');
-      expect(vm.providerResult.tabs.value.length).toBe(1);
-      expect(vm.providerResult.tabs.value[0]?.name).toBe(EXECUTION_TAB_NAME);
+      expect(vm.providerResult.tabs.value.map(tab => tab.name)).toEqual([DEFAULT_TAB.name]);
+
+      wrapper.unmount();
+    });
+
+    it('移除最后一个 Tab 后应自动折叠侧栏', async () => {
+      const Provider = createProviderComponent();
+      const wrapper = mount(Provider);
+
+      const vm = wrapper.vm as unknown as {
+        providerResult: {
+          addCustomTab: (tab: { label: string; name: string }) => void;
+          isCollapse: { value: boolean };
+          removeCustomTab: (name: string) => void;
+          tabs: { value: { name: string }[] };
+        };
+      };
+
+      vm.providerResult.addCustomTab({ label: '节点1', name: 'node-1' });
+      await nextTick();
+      expect(vm.providerResult.isCollapse.value).toBe(false);
+
+      vm.providerResult.removeCustomTab('node-1');
+      expect(vm.providerResult.tabs.value).toHaveLength(0);
+      expect(vm.providerResult.isCollapse.value).toBe(true);
 
       wrapper.unmount();
     });
@@ -289,8 +324,8 @@ describe('useCustomTab', () => {
       wrapper.unmount();
     });
 
-    it('resetCustomTab 应该恢复为仅执行情况 Tab、折叠并选中默认 Tab', async () => {
-      const Provider = createProviderComponent();
+    it('resetCustomTab 应该恢复为 defaultTabs、折叠并选中首个默认 Tab', async () => {
+      const Provider = createDefaultTabsProvider();
       const wrapper = mount(Provider);
 
       const vm = wrapper.vm as unknown as {
@@ -298,29 +333,46 @@ describe('useCustomTab', () => {
           addCustomTab: (tab: { label: string; name: string }) => void;
           resetCustomTab: () => void;
           tabs: { value: { name: string }[] };
-          selectedTab: { value: { name: string } };
+          selectedTab: { value: null | { name: string } };
           isCollapse: { value: boolean };
         };
       };
 
       vm.providerResult.addCustomTab({ label: '节点1', name: 'node-1' });
       await nextTick();
-      expect(vm.providerResult.tabs.value.length).toBe(2);
+      expect(vm.providerResult.tabs.value).toHaveLength(2);
       expect(vm.providerResult.isCollapse.value).toBe(false);
 
       vm.providerResult.resetCustomTab();
-      expect(vm.providerResult.tabs.value.length).toBe(1);
-      expect(vm.providerResult.tabs.value[0]?.name).toBe(EXECUTION_TAB_NAME);
-      expect(vm.providerResult.selectedTab.value.name).toBe(EXECUTION_TAB_NAME);
+      expect(vm.providerResult.tabs.value.map(tab => tab.name)).toEqual([DEFAULT_TAB.name]);
+      expect(vm.providerResult.selectedTab.value?.name).toBe(DEFAULT_TAB.name);
       expect(vm.providerResult.isCollapse.value).toBe(true);
+
+      wrapper.unmount();
+    });
+
+    it('无 defaultTabs 时 resetCustomTab 应清空 Tab 与选中态', async () => {
+      const Provider = createProviderComponent();
+      const wrapper = mount(Provider);
+
+      const vm = wrapper.vm as unknown as ProviderVm & {
+        providerResult: { resetCustomTab: () => void };
+      };
+
+      vm.providerResult.addCustomTab({ label: '节点1', name: 'node-1' });
+      await nextTick();
+
+      vm.providerResult.resetCustomTab();
+      expect(vm.providerResult.tabs.value).toHaveLength(0);
+      expect(vm.providerResult.selectedTab.value).toBeNull();
 
       wrapper.unmount();
     });
   });
 
   describe('displayTabs 排序与显隐', () => {
-    it('displayTabs 应按 order 升序排序（执行情况 order 0 居首）', async () => {
-      const Provider = createProviderComponent();
+    it('displayTabs 应按 order 升序排序（常驻 Tab order -1 居首）', async () => {
+      const Provider = createDefaultTabsProvider();
       const wrapper = mount(Provider);
       const vm = wrapper.vm as unknown as ProviderVm;
 
@@ -329,7 +381,7 @@ describe('useCustomTab', () => {
       vm.providerResult.addCustomTab({ label: 'B', name: 'b', order: 10 });
       await nextTick();
 
-      expect(vm.providerResult.displayTabs.value.map(tab => tab.name)).toEqual([EXECUTION_TAB_NAME, 'b', 'a']);
+      expect(vm.providerResult.displayTabs.value.map(tab => tab.name)).toEqual([DEFAULT_TAB.name, 'b', 'a']);
 
       wrapper.unmount();
     });
@@ -344,7 +396,7 @@ describe('useCustomTab', () => {
       vm.providerResult.addCustomTab({ label: 'B', name: 'b', order: 50 });
       await nextTick();
 
-      expect(vm.providerResult.displayTabs.value.map(tab => tab.name)).toEqual([EXECUTION_TAB_NAME, 'a', 'b']);
+      expect(vm.providerResult.displayTabs.value.map(tab => tab.name)).toEqual(['a', 'b']);
 
       wrapper.unmount();
     });
@@ -363,16 +415,6 @@ describe('useCustomTab', () => {
       wrapper.unmount();
     });
 
-    it('executionTabVisible 为 false 时执行情况不在 displayTabs', async () => {
-      const executionVisible = ref(false);
-      const Provider = createConfigurableProvider(executionVisible);
-      const wrapper = mount(Provider);
-      const vm = wrapper.vm as unknown as ProviderVm;
-
-      expect(vm.providerResult.displayTabs.value.some(tab => tab.name === EXECUTION_TAB_NAME)).toBe(false);
-
-      wrapper.unmount();
-    });
   });
 
   describe('addCustomTab 合并更新', () => {
@@ -386,7 +428,7 @@ describe('useCustomTab', () => {
       vm.providerResult.addCustomTab({ label: 'L2', name: 'x', order: 5 });
       await nextTick();
 
-      expect(vm.providerResult.tabs.value.length).toBe(2);
+      expect(vm.providerResult.tabs.value).toHaveLength(1);
       const target = vm.providerResult.tabs.value.find(tab => tab.name === 'x') as { label: string; order?: number };
       expect(target.label).toBe('L2');
       expect(target.order).toBe(5);
@@ -397,40 +439,40 @@ describe('useCustomTab', () => {
 
   describe('默认选中跟随 Tab 栏首位', () => {
     it('未主动切换时，挂上更靠前的 Tab 应成为选中项', async () => {
-      const Provider = createProviderComponent();
+      const Provider = createDefaultTabsProvider();
       const wrapper = mount(Provider);
       const vm = wrapper.vm as unknown as ProviderVm & {
         providerResult: { ensureCustomTab: (tab: { label: string; name: string; order?: number }) => void };
       };
 
-      expect(vm.providerResult.selectedTab.value.name).toBe(EXECUTION_TAB_NAME);
+      expect(vm.providerResult.selectedTab.value?.name).toBe(DEFAULT_TAB.name);
 
-      vm.providerResult.ensureCustomTab({ label: '文件产物', name: 'file-artifact', order: -1 });
+      vm.providerResult.ensureCustomTab({ label: '置顶', name: 'pinned', order: -10 });
       await nextTick();
 
-      expect(vm.providerResult.selectedTab.value.name).toBe('file-artifact');
+      expect(vm.providerResult.selectedTab.value?.name).toBe('pinned');
 
       wrapper.unmount();
     });
 
     it('主动切换过之后不再跟随首位', async () => {
-      const Provider = createProviderComponent();
+      const Provider = createDefaultTabsProvider();
       const wrapper = mount(Provider);
       const vm = wrapper.vm as unknown as ProviderVm & {
         providerResult: { ensureCustomTab: (tab: { label: string; name: string; order?: number }) => void };
       };
 
-      vm.providerResult.selectCustomTab({ name: EXECUTION_TAB_NAME });
-      vm.providerResult.ensureCustomTab({ label: '文件产物', name: 'file-artifact', order: -1 });
+      vm.providerResult.selectCustomTab({ name: DEFAULT_TAB.name });
+      vm.providerResult.ensureCustomTab({ label: '置顶', name: 'pinned', order: -10 });
       await nextTick();
 
-      expect(vm.providerResult.selectedTab.value.name).toBe(EXECUTION_TAB_NAME);
+      expect(vm.providerResult.selectedTab.value?.name).toBe(DEFAULT_TAB.name);
 
       wrapper.unmount();
     });
 
     it('resetCustomTab 后应恢复选中跟随首位', async () => {
-      const Provider = createProviderComponent();
+      const Provider = createDefaultTabsProvider();
       const wrapper = mount(Provider);
       const vm = wrapper.vm as unknown as ProviderVm & {
         providerResult: {
@@ -440,42 +482,43 @@ describe('useCustomTab', () => {
       };
 
       // 主动切换后挂上更靠前的 Tab，选中不再跟随
-      vm.providerResult.selectCustomTab({ name: EXECUTION_TAB_NAME });
-      vm.providerResult.ensureCustomTab({ label: '文件产物', name: 'file-artifact', order: -1 });
+      vm.providerResult.selectCustomTab({ name: DEFAULT_TAB.name });
+      vm.providerResult.ensureCustomTab({ label: '置顶', name: 'pinned', order: -10 });
       await nextTick();
-      expect(vm.providerResult.selectedTab.value.name).toBe(EXECUTION_TAB_NAME);
+      expect(vm.providerResult.selectedTab.value?.name).toBe(DEFAULT_TAB.name);
 
-      // reset 清空自定义 Tab 并重置「是否主动切换过」标记
+      // reset 回到 defaultTabs 并重置「是否主动切换过」标记
       vm.providerResult.resetCustomTab();
-      expect(vm.providerResult.selectedTab.value.name).toBe(EXECUTION_TAB_NAME);
+      expect(vm.providerResult.selectedTab.value?.name).toBe(DEFAULT_TAB.name);
 
-      // 再次常驻挂载更靠前的 Tab，应恢复跟随首位
-      vm.providerResult.ensureCustomTab({ label: '文件产物', name: 'file-artifact', order: -1 });
+      // 再次挂载更靠前的 Tab，应恢复跟随首位
+      vm.providerResult.ensureCustomTab({ label: '置顶', name: 'pinned', order: -10 });
       await nextTick();
-      expect(vm.providerResult.selectedTab.value.name).toBe('file-artifact');
+      expect(vm.providerResult.selectedTab.value?.name).toBe('pinned');
 
       wrapper.unmount();
     });
   });
 
   describe('选中 Tab 被隐藏时回退', () => {
-    it('当前选中的执行情况被配置隐藏时应自动切到首个可见 Tab', async () => {
-      const executionVisible = ref(true);
-      const Provider = createConfigurableProvider(executionVisible);
+    it('当前选中 Tab 被置为 visible:false 时应自动切到首个可见 Tab', async () => {
+      const Provider = createDefaultTabsProvider();
       const wrapper = mount(Provider);
-      const vm = wrapper.vm as unknown as ProviderVm;
+      const vm = wrapper.vm as unknown as ProviderVm & {
+        providerResult: { ensureCustomTab: (tab: { name: string; visible?: boolean }) => void };
+      };
 
       vm.providerResult.addCustomTab({ label: '节点1', name: 'node-1' });
       await nextTick();
-      // 回到执行情况 Tab
-      vm.providerResult.selectCustomTab({ name: EXECUTION_TAB_NAME });
-      expect(vm.providerResult.selectedTab.value.name).toBe(EXECUTION_TAB_NAME);
+      // 回到常驻 Tab
+      vm.providerResult.selectCustomTab({ name: DEFAULT_TAB.name });
+      expect(vm.providerResult.selectedTab.value?.name).toBe(DEFAULT_TAB.name);
 
-      // 隐藏执行情况 → 选中态应回退到唯一可见的 node-1
-      executionVisible.value = false;
+      // 隐藏常驻 Tab → 选中态应回退到唯一可见的 node-1
+      vm.providerResult.ensureCustomTab({ name: DEFAULT_TAB.name, visible: false });
       await nextTick();
 
-      expect(vm.providerResult.selectedTab.value.name).toBe('node-1');
+      expect(vm.providerResult.selectedTab.value?.name).toBe('node-1');
 
       wrapper.unmount();
     });

@@ -16,8 +16,6 @@ relatedComponents:
     relation: 文件产物来源于 AssistantMessage.property.artifacts
   - slug: chat-container
     relation: 面板挂载在侧栏「文件产物」Tab（固定、不可关闭），并通过 onArtifactClick 异步取链
-  - slug: execution-summary
-    relation: 同为 ChatContainer 侧栏 Tab 面板，交互形态一致
   - slug: message-loading
     relation: ArtifactPreviewHost 取链 / 拉取正文过程使用 MessageLoading
   - slug: mention-tag
@@ -77,7 +75,7 @@ exportStatus: internal
 
 ## 基础用法
 
-面板**未从包入口导出**，业务侧请走下方「业务接入」；下列示例仅用于文档站 / 本地调试（与 `ExecutionSummary` 文档站写法一致：相对路径引入 + 自行挂 Provider）。
+面板**未从包入口导出**，业务侧请走下方「业务接入」；下列示例仅用于文档站 / 本地调试（相对路径引入 + 自行挂 Provider）。
 
 ```vue
 <template>
@@ -214,13 +212,13 @@ ArtifactFileCard（点击文件卡片）
                            └─ HtmlPreview | MarkdownPreview | TxtPreview | UrlIframePreview
 
 容器初始化
-  └─ ensureCustomTab('file-artifact') 常驻挂上（不展开侧栏）；因 order:-1 排在首位，
-     未主动切换过 Tab 时会成为默认选中面板；无产物时由面板展示整块空态
+  └─ useCustomTabProvider({ defaultTabs: [FILE_ARTIFACT_TAB] }) 常驻声明（不展开侧栏）；
+     作为 defaultTabs[0] 即初始选中面板；无产物时由面板展示整块空态
 ```
 
 - 文件卡片通过 `useArtifactPreviewConsumer` 注入预览上下文，无 Provider 时卡片不可点击（兜底 `undefined`）
 - `ChatContainer` 通过 `useArtifactPreviewProvider` 提供上下文，并把「打开侧栏 Tab」这一副作用以 `onOpen` 注入，保持 composable 职责单一
-- 侧栏「文件产物」Tab 固定不可关闭，`order: -1` 排在「执行情况」之前；**常驻不随产物有无增删**，无产物时由面板展示整块空态
+- 侧栏「文件产物」Tab 固定不可关闭，`order: -1` 排在所有业务自定义 Tab 之前；**常驻不随产物有无增删**，无产物时由面板展示整块空态
 
 ## 引用到输入框
 
@@ -352,6 +350,5 @@ type AIFileInfo = {
 - [AssistantMessage](/components/message/assistant-message) — 文件产物来源（`property.artifacts`）
 - [ChatContainer](/components/setup/chat-container) — 侧栏「文件产物」Tab 挂载场景，提供 `onArtifactClick`
 - [MessageLoading](/components/helper/message-loading) — Host 预览区异步加载态
-- [ExecutionSummary](/components/agent/execution-summary) — 同为侧栏 Tab 面板
 - [MentionTag](/components/rendering/mention-tag) — 引用后在输入框内的标签形态
 - [useInputMention](/composables/use-input-mention) — 引用入口的上下文来源

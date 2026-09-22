@@ -80,11 +80,6 @@ import {
   t,
 } from '@blueking/chat-x';
 
-const { addCustomTab, ensureCustomTab, removeCustomTab } = useCustomTabProvider({ /* ... */ });
-
-// 会话级文件产物聚合已内聚在 useMessageGroup，直接消费
-const { sessionArtifacts } = useMessageGroup({ keyword, messages, selectedUserMessages });
-
 const FILE_ARTIFACT_TAB = {
   closable: false,
   label: t('文件产物'),
@@ -92,8 +87,14 @@ const FILE_ARTIFACT_TAB = {
   order: -1,
 };
 
-// 常驻挂载：不随产物有无增删，无产物时由面板展示空态
-ensureCustomTab(FILE_ARTIFACT_TAB);
+// 常驻声明：作为默认 Tab 不随产物有无增删，无产物时由面板展示空态
+const { addCustomTab, removeCustomTab } = useCustomTabProvider({
+  defaultTabs: [FILE_ARTIFACT_TAB],
+  /* ... */
+});
+
+// 会话级文件产物聚合已内聚在 useMessageGroup，直接消费
+const { sessionArtifacts } = useMessageGroup({ messages, selectedUserMessages });
 
 const { activeArtifactId, setActiveArtifactId } = useArtifactPreviewProvider({
   getOnArtifactClick: () => props.onArtifactClick,
@@ -234,8 +235,8 @@ ArtifactFileCard（点击）
                       └─ ArtifactPreviewHost（loader + 分类型 renderer）
 
 容器初始化
-  └─ ensureCustomTab(FILE_ARTIFACT_TAB_NAME) 常驻挂上（不展开侧栏）；因 order:-1 排在首位，
-     未主动切换过 Tab 时会成为默认选中面板；无产物时由面板展示整块空态
+  └─ useCustomTabProvider({ defaultTabs: [FILE_ARTIFACT_TAB] }) 常驻声明（不展开侧栏）；
+     作为 defaultTabs[0] 即初始选中面板；无产物时由面板展示整块空态
 
 sessionArtifacts 变化
   └─ 仅维护命中态（无产物清空，命中项失效回落第一个）；不增删 Tab
@@ -248,7 +249,7 @@ sessionArtifacts 变化
 - **职责单一**：composable 不直接调用 `useCustomTab`，侧栏 Tab 打开逻辑由 `onOpen` 注入；也不做正文 fetch / iframe 渲染
 - **ShallowRef 优先**：`activeArtifactId` 使用 `shallowRef`，避免不必要的深层响应式开销
 - **Consumer 兜底**：`useArtifactPreviewConsumer` 无 Provider 时返回 `undefined`，文件卡片在无容器上下文时自动不可点击
-- **与 useCustomTab 协作**：点击卡片走 `addCustomTab`（展开 + 选中）；容器初始化时走 `ensureCustomTab` 常驻挂载（不展开；因 `order: -1` 在未主动切换前会成为默认选中），无产物也不移除，由面板展示空态
+- **与 useCustomTab 协作**：点击卡片走 `addCustomTab`（展开 + 选中）；容器初始化时通过 `defaultTabs` 常驻声明（不展开；作为 `defaultTabs[0]` 即初始选中），无产物也不移除，由面板展示空态
 
 ## 关联组件
 

@@ -117,7 +117,7 @@ export const useFlowTab = (options: { messageUid: Ref<string | undefined>; taskL
       label: t('有效证据'),
       name: buildConfidenceTabName(task),
       // 排序优先采用后端下发的 tab_order（越小越靠前）；
-      // 缺省回退 10，固定排在「执行情况」(order 0) 之后、节点详情(默认 100)之前
+      // 缺省回退 10，固定排在常驻「文件产物」(order -1) 之后、节点详情(默认 100)之前
       order: task.tab_order ?? 10,
       data: {
         component: BkFlowNodeDetail,
@@ -146,8 +146,8 @@ export const useFlowTab = (options: { messageUid: Ref<string | undefined>; taskL
   });
 
   onUnmounted(() => {
-    // 仅在 message-container 中（存在滚动上下文）被销毁时移除 Tab；
-    // 若是在执行情况面板内的销毁则不移除。
+    // 仅在对话流（message-container 提供滚动上下文）中被销毁时移除 Tab；
+    // 侧栏等无滚动上下文的场景内销毁则不移除，避免自身把侧栏 Tab 清掉。
     if (!provideContainerScrollData?.value) {
       return;
     }

@@ -43,18 +43,9 @@
         </dl>
       </details>
 
-      <label class="flow-side-render-demo__toggle">
-        <input
-          v-model="executionTabVisible"
-          type="checkbox"
-        />
-        <span>展示「执行情况」Tab（<code>executionTabVisible</code>）</span>
-      </label>
-
       <div class="flow-side-render-demo__chat">
         <ChatBot
           :key="chatBotKey"
-          :execution-tab-visible="executionTabVisible"
           :get-side-render-component="getSideRenderComponent"
           :get-side-tab-render-component="getSideTabRenderComponent"
           height="100%"
@@ -75,7 +66,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, ref } from 'vue';
+  import { computed } from 'vue';
 
   import { type GetSideRenderComponent, ChatBot } from '@blueking/ai-blueking';
 
@@ -96,9 +87,6 @@
   );
 
   const flowAgentUrl = import.meta.env.VITE_FLOW_AGENT_URL || '';
-
-  // 「执行情况」Tab 显隐开关：缺省 true；置 false 后从 Tab 栏隐藏（该 Tab order 固定 0 且不可关闭）
-  const executionTabVisible = ref(true);
 
   const builtinHandlers = useSideRenderHandlers({ detailSource: 'builtin' });
   const customHandlers = useSideRenderHandlers({ detailSource: 'custom' });
@@ -142,32 +130,6 @@
     overflow: hidden;
     border: 1px solid #dcdee5;
     border-radius: 8px;
-  }
-
-  .flow-side-render-demo__toggle {
-    display: flex;
-    flex-shrink: 0;
-    gap: 6px;
-    align-items: center;
-    padding: 8px 10px;
-    font-size: 12px;
-    line-height: 18px;
-    color: #63656e;
-    cursor: pointer;
-    background: #f5f7fa;
-    border-bottom: 1px solid #dcdee5;
-
-    input {
-      cursor: pointer;
-    }
-
-    code {
-      padding: 1px 5px;
-      font-size: 11px;
-      color: #3a84ff;
-      background: #f0f5ff;
-      border-radius: 3px;
-    }
   }
 
   .flow-side-render-demo__chat {

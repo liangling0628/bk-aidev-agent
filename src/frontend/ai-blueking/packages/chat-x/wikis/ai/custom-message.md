@@ -31,7 +31,7 @@ chat-x 的消息渲染是 **由外到内的插槽链 + 按 role 分发**，而�
 
 ```text
 ChatContainer
-├── #aside … 侧栏 Tab / ExecutionSummary（见侧栏专题文档）
+├── #aside … 侧栏 Tab / 文件产物面板（见侧栏专题文档）
 └── #main
      ├── #default（整块主区域，可替换整个 MessageContainer）
      └── MessageContainer

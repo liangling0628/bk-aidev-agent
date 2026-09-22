@@ -134,11 +134,6 @@ export const MAX_UPLOAD_FILE_SIZE = 20 * 1024 * 1024; // 单文件大小须严�
 
 export { ALLOWED_UPLOAD_EXTENSIONS, DEFAULT_UPLOAD_ACCEPT } from '../utils/upload-accept';
 
-/**
- * 关键词高亮类名
- */
-export const HIGHLIGHT_KEYWORD_CLASS_NAME = 'ai-is-keyword';
-
 export enum RenderMode {
   Chat = 'chat',
   Share = 'share',

@@ -77,7 +77,7 @@ AI Chat 界面的复杂度在于**组合爆炸**：消息类型 × 内容格式 
 
 ### 顶层组合
 
-`ChatContainer` 作为唯一的完整对话容器，将 `MessageContainer`、`ChatInput`、`ShortcutRender`、`ExecutionSummary`、`SelectionFooter` 与 `useMessageGroup` 等编排为标准对话页面，对外暴露 `ChatContainerProps`（合并了 `ChatInputProps` + `MessageContainerProps` 的大部分字段）。
+`ChatContainer` 作为唯一的完整对话容器，将 `MessageContainer`、`ChatInput`、`ShortcutRender`、`SelectionFooter` 与 `useMessageGroup` 等编排为标准对话页面，对外暴露 `ChatContainerProps`（合并了 `ChatInputProps` + `MessageContainerProps` 的大部分字段）。
 
 **设计决策**：不提供多种组合组件，而是提供一个「完整版」 + 自由组合的「零件」，避免 API 表面积膨胀。
 
@@ -94,7 +94,7 @@ AI Chat 界面的复杂度在于**组合爆炸**：消息类型 × 内容格式 
 | **Agent 能力** | 「我要处理工具调用和中断」 | ToolCallRender、InterruptMessageRender、ToolApprovalCard、UserQuestionCard、FlowAgentContent |
 | **工具与反馈** | 「我要加消息操作」 | MessageTools、MessageTime、ToolBtn、DeleteTool、MessageUserFeedback、ScrollBtn |
 | **媒体文件** | 「我要处理图片/文件」 | AiImage、ImagePreview、ImagePreviewGroup、FileContent、ImageContent |
-| **辅助能力** | 「我要理解内部辅助组件」 | ActivityLayout、AiLoading、MessageLoading、HighlightKeyword、VNodeRenderer |
+| **辅助能力** | 「我要理解内部辅助组件」 | ActivityLayout、AiLoading、MessageLoading、VNodeRenderer |
 
 **为什么这样分**：对齐开发者（和 AI Agent）的问题——「我在做消息列表 / 输入框 / 富文本 / 媒体 / 工具条」，而不是按内部层级找文件。AI Agent 通过 MCP 的 `domain` 参数可直接按能力域检索。
 

@@ -1,6 +1,6 @@
 # 图标
 
-`@blueking/chat-x` 内置了 76 个 SVG 图标：其中 70 个通过 Vue `h()` 预创建为 VNode 对象，可直接用于模板渲染；`ai.ts` 与 `menu-item.ts` 下的 6 个是 `defineComponent` 组件（需要按实例生成唯一渐变 id 或保留多色品牌配色）。
+`@blueking/chat-x` 内置了 75 个 SVG 图标：其中 69 个通过 Vue `h()` 预创建为 VNode 对象，可直接用于模板渲染；`ai.ts` 与 `menu-item.ts` 下的 6 个是 `defineComponent` 组件（需要按实例生成唯一渐变 id 或保留多色品牌配色）。
 
 <script setup lang="ts">
 import { ref, defineComponent, cloneVNode } from 'vue';
@@ -19,7 +19,7 @@ import {
   PreviewCloseIcon, ArrowLeftIcon, ArrowRightPreviewIcon, ReloadIcon,
   ImageBrokenIcon, ImageSizeIcon,
   BkFlowSuccessIcon, BkFlowFailedIcon, BkFlowSuspendedIcon,
-  ExecutionIcon, NodeOutputIcon, NodeTabIcon,
+  NodeOutputIcon, NodeTabIcon,
   ToolCallIcon, ChevronRightIcon,
 } from '@blueking/chat-x';
 
@@ -152,7 +152,6 @@ const groups = [
       { name: 'BkFlowSuccessIcon', icon: w(BkFlowSuccessIcon), fixed: true },
       { name: 'BkFlowFailedIcon', icon: w(BkFlowFailedIcon), fixed: true },
       { name: 'BkFlowSuspendedIcon', icon: w(BkFlowSuspendedIcon), fixed: true },
-      { name: 'ExecutionIcon', icon: w(ExecutionIcon) },
       { name: 'NodeOutputIcon', icon: w(NodeOutputIcon) },
       { name: 'NodeTabIcon', icon: w(NodeTabIcon) },
       { name: 'ToolCallIcon', icon: w(ToolCallIcon) },
@@ -349,7 +348,6 @@ type Key = ToolIcons;
 | `BkFlowSuccessIcon`   | `ai-bk-flow-success-icon`   | `0 0 16 16`     | 硬编码 `#18B456` + 白 | 流程成功 |
 | `BkFlowFailedIcon`    | `ai-bk-flow-failed-icon`    | `0 0 16 16`     | 硬编码 `#EA3636` + 白 | 流程失败 |
 | `BkFlowSuspendedIcon` | `ai-bk-flow-suspended-icon` | `0 0 16 16`     | 硬编码 `#F59500` + 白 | 流程暂停 |
-| `ExecutionIcon`       | `ai-execution-icon`         | `0 0 1024 1024` | currentColor          | 执行时钟 |
 | `NodeOutputIcon`      | `ai-node-output-icon`       | `0 0 1024 1024` | currentColor          | 节点输出 |
 | `NodeTabIcon`         | `ai-node-tab-icon`          | `0 0 1024 1024` | currentColor          | 节点 Tab |
 | `ToolCallIcon`        | `ai-toolcall-icon`          | `0 0 16 16`     | currentColor          | 工具调用（ToolcallRender 头部，16×16） |
